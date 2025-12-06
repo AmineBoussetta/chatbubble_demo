@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dental AI Widget - English Demo</title>
+    <style>
+        /* =========================================
+           1. MOCK SITE STYLES (Background)
+           ========================================= */
+        body { margin: 0; padding: 0; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; color: #333; overflow-x: hidden; }
+        
+        .site-nav {
+            position: sticky; top: 0; background: white; padding: 20px 5%;
+            display: flex; justify-content: space-between; align-items: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05); z-index: 100;
+        }
+        .site-logo { font-weight: 800; font-size: 22px; color: #007AFF; letter-spacing: -0.5px; }
+        .site-links { display: flex; gap: 20px; font-size: 14px; font-weight: 500; }
+        .site-links a { text-decoration: none; color: #333; }
+
+        .site-hero {
+            height: 80vh; background: linear-gradient(rgba(0,0,0,0.3), rgba(0,0,0,0.3)), url('https://images.unsplash.com/photo-1629909613654-28e377c37b09?q=80&w=2068&auto=format&fit=crop');
+            background-size: cover; background-position: center;
+            display: flex; align-items: center; justify-content: center; text-align: center; color: white;
+            padding: 20px;
+        }
+        .site-hero h1 { font-size: 48px; margin-bottom: 20px; max-width: 800px; }
+        .site-hero p { font-size: 18px; max-width: 600px; margin: 0 auto; opacity: 0.9; }
+
+        .site-section { padding: 80px 10%; line-height: 1.6; }
+        .site-section h2 { font-size: 32px; margin-bottom: 30px; color: #111; }
+        .site-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 30px; }
+        .site-card { background: #f9fafb; padding: 30px; border-radius: 12px; }
+        .site-card h3 { margin-top: 0; color: #007AFF; }
+        .site-footer { background: #1f2937; color: white; padding: 60px 10% 120px 10%; }
+        
+        /* =========================================
+           2. WIDGET STYLES
+           ========================================= */
+        :root {
+            --dw-primary: #007AFF;
+            --dw-text: #1f2937;
+            --dw-bg: rgba(255, 255, 255, 0.95);
+            --dw-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+            --dw-font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        #dental-widget-container * { box-sizing: border-box; font-family: var(--dw-font); }
+
+        /* --- SIRI EDGE GLOW EFFECT --- */
+        .dw-siri-edges {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none; /* Allows clicking through */
+            z-index: 99991; /* Above backdrop, below panel */
+            opacity: 0;
+            transition: opacity 1s ease;
+        }
+
+        .dw-siri-edges.active {
+            opacity: 1;
+            animation: edgePulse 4s infinite alternate;
+        }
+
+        @keyframes edgePulse {
+            0% {
+                box-shadow: inset 0 0 50px 20px rgba(54, 209, 220, 0.3), 
+                            inset 0 0 100px 40px rgba(91, 134, 229, 0.1);
+            }
+            50% {
+                box-shadow: inset 0 0 80px 30px rgba(142, 45, 226, 0.4), 
+                            inset 0 0 150px 60px rgba(74, 0, 224, 0.2);
+            }
+            100% {
+                box-shadow: inset 0 0 60px 20px rgba(54, 209, 220, 0.4), 
+                            inset 0 0 120px 50px rgba(0, 122, 255, 0.2);
+            }
+        }
+
+        /* --- SIRI ORB ANIMATION --- */
+        @keyframes siriMorph {
+            0% { border-radius: 60% 40% 30% 70% / 60% 30% 70% 40%; transform: scale(1); }
+            50% { border-radius: 30% 60% 70% 40% / 50% 60% 30% 60%; transform: scale(1.1); }
+            100% { border-radius: 60% 40% 30% 70% / 60% 30% 70% 40%; transform: scale(1); }
+        }
+        @keyframes siriSpin {
+            0% { background-position: 0% 50%; } 100% { background-position: 100% 50%; }
+        }
+
+        .dw-siri-orb {
+            width: 32px; height: 32px;
+            background: linear-gradient(135deg, #36D1DC, #5B86E5, #8E2DE2);
+            background-size: 200% 200%; border-radius: 50%;
+            animation: siriMorph 4s infinite ease-in-out, siriSpin 3s infinite linear;
+            box-shadow: 0 0 15px rgba(91, 134, 229, 0.5);
+            transition: all 0.5s ease;
+        }
+
+        .dw-siri-orb.large {
+            width: 120px; height: 120px; margin: 0 auto 30px auto;
+            filter: blur(5px); box-shadow: 0 0 50px rgba(91, 134, 229, 0.6);
+        }
+        .dw-siri-orb.talking {
+            animation: siriMorph 0.8s infinite ease-in-out, siriSpin 0.8s infinite linear;
+            transform: scale(1.15); filter: blur(2px);
+        }
+
+        /* --- LAUNCHER PILL --- */
+        .dw-launcher-pill {
+            position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%);
+            background: var(--dw-bg); padding: 8px 24px 8px 10px; border-radius: 50px;
+            box-shadow: var(--dw-shadow); display: flex; align-items: center; gap: 12px;
+            cursor: pointer; z-index: 99999;
+            backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.6);
+            transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        .dw-launcher-pill:hover { transform: translateX(-50%) scale(1.05); }
+        .dw-launcher-text { font-weight: 700; color: var(--dw-text); font-size: 14px; }
+        .dw-launcher-sub { font-size: 11px; color: #6b7280; display: block; }
+
+        /* --- PANEL --- */
+        .dw-panel {
+            position: fixed; bottom: 100px; left: 50%;
+            transform: translateX(-50%) scale(0.9) translateY(20px);
+            transform-origin: bottom center;
+            width: 360px; height: 520px; background: #ffffff;
+            border-radius: 24px; box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            z-index: 99998; opacity: 0; pointer-events: none;
+            transition: all 0.4s cubic-bezier(0.19, 1, 0.22, 1);
+            overflow: hidden; display: flex; flex-direction: column;
+        }
+        .dw-panel.open { opacity: 1; transform: translateX(-50%) scale(1) translateY(0); pointer-events: all; }
+
+        /* --- BACKDROP --- */
+        .dw-backdrop {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.4); backdrop-filter: blur(8px);
+            z-index: 99990; opacity: 0; pointer-events: none; transition: opacity 0.4s;
+        }
+        .dw-backdrop.visible { opacity: 1; pointer-events: all; }
+
+        /* --- CONTENT --- */
+        .dw-header { padding: 15px 20px; display: flex; justify-content: flex-end; }
+        .dw-close-btn { background: #f3f4f6; border: none; width: 30px; height: 30px; border-radius: 50%; cursor: pointer; color: #555; display: flex; align-items: center; justify-content: center; font-size: 16px; }
+        
+        .dw-screen {
+            flex: 1; padding: 0 30px 30px 30px; display: flex; flex-direction: column;
+            align-items: center; justify-content: center; text-align: center;
+            position: absolute; width: 100%; height: calc(100% - 60px); top: 60px;
+            transition: 0.3s; opacity: 0; transform: translateY(20px); pointer-events: none;
+        }
+        .dw-screen.active { opacity: 1; transform: translateY(0); pointer-events: all; }
+
+        .dw-btn-primary {
+            background: linear-gradient(135deg, #007AFF, #005ec4); color: white; border: none;
+            padding: 14px 28px; border-radius: 50px; font-size: 16px; font-weight: 600;
+            cursor: pointer; width: 100%; box-shadow: 0 8px 20px rgba(0, 122, 255, 0.3);
+            transition: transform 0.2s; margin-top: 15px;
+        }
+        .dw-btn-primary:hover { transform: scale(1.02); }
+
+        .dw-controls { display: flex; gap: 15px; margin-top: 20px; }
+        .dw-round-btn { width: 60px; height: 60px; border-radius: 50%; border: none; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: 0.2s; }
+        .dw-btn-mute { background: #f3f4f6; color: #333; }
+        .dw-btn-hangup { background: #FF3B30; color: white; }
+        .dw-round-btn:hover { transform: scale(1.1); }
+
+        @media (max-width: 480px) {
+            .dw-launcher-pill { bottom: 20px; width: 90%; justify-content: center; }
+            .dw-panel { bottom: 0; width: 100%; height: 85vh; border-radius: 30px 30px 0 0; transform: translateY(100%); }
+            .dw-panel.open { transform: translateY(0); }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- MOCK WEBSITE CONTENT -->
+    <nav class="site-nav">
+        <div class="site-logo">DENTAL PRO</div>
+        <div class="site-links">
+            <a href="#">Home</a>
+            <a href="#">Treatments</a>
+            <a href="#">Pricing</a>
+            <a href="#">Contact</a>
+        </div>
+    </nav>
+    <header class="site-hero">
+        <div>
+            <h1>The future of your smile starts here.</h1>
+            <p>State-of-the-art technology for pain-free treatments.</p>
+        </div>
+    </header>
+    <section class="site-section">
+        <h2>Our Services</h2>
+        <div class="site-grid">
+            <div class="site-card"><h3>Laser Whitening</h3><p>Latest generation laser technology.</p></div>
+            <div class="site-card"><h3>3D Implants</h3><p>Precise analysis with 3D scanning.</p></div>
+            <div class="site-card"><h3>Invisible Aligners</h3><p>Clear trays for a perfect smile.</p></div>
+        </div>
+    </section>
+    <footer class="site-footer">
+        <h3>Dental Pro Clinic</h3>
+        <p>123 Medical Plaza, New York, NY</p>
+    </footer>
+
+    <!-- WIDGET CONTAINER -->
+    <div id="dental-widget-container">
+        
+        <!-- Backdrop -->
+        <div class="dw-backdrop" id="dw-backdrop" onclick="toggleWidget()"></div>
+
+        <!-- Siri Edge Glow Effect -->
+        <div class="dw-siri-edges" id="dw-siri-edges"></div>
+
+        <!-- LAUNCHER PILL -->
+        <div class="dw-launcher-pill" onclick="toggleWidget()">
+            <div class="dw-siri-orb"></div>
+            <div style="text-align: left;">
+                <div class="dw-launcher-text">AI Assistant</div>
+                <span class="dw-launcher-sub">Book Appointment</span>
+            </div>
+        </div>
+
+        <!-- PANEL -->
+        <div class="dw-panel" id="dw-panel">
+            <div class="dw-header">
+                <button class="dw-close-btn" onclick="toggleWidget()">✕</button>
+            </div>
+
+            <!-- Home Screen -->
+            <div class="dw-screen active" id="screen-home">
+                <img src="https://img.freepik.com/free-photo/portrait-3d-female-doctor_23-2151107332.jpg" style="width:90px; height:90px; border-radius:50%; object-fit:cover; margin-bottom:15px; box-shadow: 0 5px 15px rgba(0,0,0,0.1);" alt="Avatar">
+                <h2 style="margin:10px 0; font-size:20px; color:#111;">Book Appointment</h2>
+                <p style="color:#666; font-size:14px; margin-bottom:25px;">I'm Sarah. I can check availability and book a slot for you instantly.</p>
+                <button class="dw-btn-primary" onclick="startCall()">Start Call</button>
+                <div style="margin-top:20px; font-size:12px; color:#aaa;">Powered by DentalAI™</div>
+            </div>
+
+            <!-- Call Screen -->
+            <div class="dw-screen" id="screen-call">
+                <h3 style="color:#007AFF; font-size:12px; letter-spacing:1px; margin-bottom:40px;">SECURE CALL</h3>
+                <div class="dw-siri-orb large" id="call-orb"></div>
+                <div id="call-status" style="font-weight:600; font-size:18px;">Connecting...</div>
+                <div id="call-timer" style="color:#888; margin-top:5px;">00:00</div>
+                <div class="dw-controls">
+                    <button class="dw-round-btn dw-btn-mute" onclick="toggleMute()">
+                        <!-- Mute Icon -->
+                        <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"></path></svg>
+                    </button>
+                    <button class="dw-round-btn dw-btn-hangup" onclick="endCall()">
+                        <!-- Hangup Icon -->
+                        <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M16 8l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2M5 11l5-5a2.5 2.5 0 013.536 0l1.414 1.414a5 5 0 007.072 0 5 5 0 010 7.07l-1.414 1.415a2.5 2.5 0 01-3.536 0l-3-3a2.5 2.5 0 010-3.536l1.414-1.414"></path></svg>
+                    </button>
+                </div>
+            </div>
+
+            <!-- End Screen -->
+            <div class="dw-screen" id="screen-end">
+                <div style="color:#10b981; margin-bottom:20px;">
+                    <svg width="60" height="60" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                </div>
+                <h2>Finished</h2>
+                <p style="color:#666;">You will receive a confirmation SMS shortly.</p>
+                <button class="dw-btn-primary" onclick="resetWidget()" style="background:#e5e7eb; color:#374151; box-shadow:none;">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- JS LOGIC -->
+    <script>
+        let isOpen = false;
+        let callTimer;
+        let seconds = 0;
+        const panel = document.getElementById('dw-panel');
+        const backdrop = document.getElementById('dw-backdrop');
+        const orb = document.getElementById('call-orb');
+        const siriEdges = document.getElementById('dw-siri-edges');
+
+        function toggleWidget() {
+            isOpen = !isOpen;
+            if (isOpen) {
+                panel.classList.add('open');
+                backdrop.classList.add('visible');
+                document.body.style.overflow = 'hidden';
+            } else {
+                panel.classList.remove('open');
+                backdrop.classList.remove('visible');
+                document.body.style.overflow = 'auto';
+            }
+        }
+
+        function switchScreen(id) {
+            document.querySelectorAll('.dw-screen').forEach(s => s.classList.remove('active'));
+            document.getElementById(id).classList.add('active');
+        }
+
+        function startCall() {
+            switchScreen('screen-call');
+            document.getElementById('call-status').innerText = "Connecting...";
+            
+            // ACTIVATE EDGE GLOW
+            siriEdges.classList.add('active');
+
+            setTimeout(() => {
+                document.getElementById('call-status').innerText = "Sarah (AI)";
+                startTimer();
+                simulateVoice();
+            }, 1500);
+        }
+
+        function endCall() {
+            clearInterval(callTimer);
+            switchScreen('screen-end');
+            orb.classList.remove('talking');
+            
+            // DEACTIVATE EDGE GLOW
+            siriEdges.classList.remove('active');
+        }
+
+        function resetWidget() {
+            toggleWidget();
+            setTimeout(() => {
+                switchScreen('screen-home');
+                seconds = 0;
+                document.getElementById('call-timer').innerText = "00:00";
+            }, 500);
+        }
+
+        function startTimer() {
+            seconds = 0;
+            callTimer = setInterval(() => {
+                seconds++;
+                const m = Math.floor(seconds / 60).toString().padStart(2, '0');
+                const s = (seconds % 60).toString().padStart(2, '0');
+                document.getElementById('call-timer').innerText = `${m}:${s}`;
+            }, 1000);
+        }
+
+        function simulateVoice() {
+            setInterval(() => { orb.classList.toggle('talking'); }, 1000);
+        }
+
+        function toggleMute() { alert("Microphone muted/unmuted"); }
+    </script>
+</body>
+</html>
